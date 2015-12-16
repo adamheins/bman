@@ -1,0 +1,29 @@
+#!/bin/bash
+
+man_paths=$(echo "$(man -w)" | tr ":" "\n")
+temp_dir=$(mktemp -dt bman)
+temp_file=$(mktemp -t bman)
+
+# Aggregate man pages from all of the directories on the man path.
+for man_path in $man_paths; do
+  for man_section in $man_path/man*; do
+    ls $man_section >> $temp_dir/$(basename $man_section)
+  done
+done
+
+if [ -z $1 ]; then
+  # Aggregate all man pages into one file, with headings per section.
+  for man_section in $temp_dir/*; do
+    echo "" >> $temp_file
+    echo $(basename $man_section) | tr '[:lower:]' '[:upper:]' >> $temp_file
+    echo "----" >> $temp_file
+    cat $man_section | sort >> $temp_file
+  done
+else
+  echo "MAN$1" >> $temp_file
+  echo "----" >> $temp_file
+  cat $temp_dir/man$1 | sort >> $temp_file
+fi
+
+# Output the list of man pages.
+cat $temp_file | uniq
